@@ -108,7 +108,7 @@
         layer.on('mouseover', highlightLayer);
         layer.on('mouseout', resetLayerStyle);
 
-        layer.bindTooltip(feature.properties.Name);
+        layer.bindTooltip(feature.properties.Name +'<br> Click to drill down');
     }
 
     function highlightLayer(e) {
@@ -148,6 +148,9 @@
                     opacity:0
                 });
             }
+
+            // remove tootip
+            layer.unbindTooltip();
         });
 
         // update pointData source
@@ -193,8 +196,11 @@
                 color:'#eaaf00',
                 fillOpacity:0.8,
                 opacity:0.8
-            })
-        })
+            });
+
+            layer.bindTooltip(layer.feature.properties.Name +'<br> Click to drill down');
+        });
+
         // fit to layer extent
         map.fitBounds(postConstituency.getBounds());
 
