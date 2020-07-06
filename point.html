@@ -14,18 +14,18 @@
         }
 
         /* Custom mapbox styling */
-        .custom-icon {
+        /* .custom-icon {
             height: 14px;
             width: 14px;
             border: 2px solid;
             border-color: aquamarine;
             border-radius: 50%;
-        }
+        } */
 
         .inner-icon {
-            height: 10px;
-            width: 10px;
-            background-color: aquamarine;
+            height: 5px;
+            width: 5px;
+            background-color:#9b06f7;
             border-radius: 50%;
             margin:2px auto;
         }
@@ -67,11 +67,18 @@
      });
 
      var postCodePoint = L.geoJson(null, {
+        style:function(feature) {
+            return {
+                radius:3,
+                fillColor:'#DA8D31',
+                fillOpacity:1,
+                color:'#DA8D31',
+                weight:0
+            }
+        },
         onEachFeature:onEachPointFeature,
         pointToLayer:function(geoObject, latlng){
-            let marker = L.marker(latlng, {
-                icon:customIcom
-            });
+            let marker = L.circleMarker(latlng, {});
             return marker;
         }
      });
@@ -84,7 +91,7 @@
             return {
                 fillColor:'#eaaf00',
                 fillOpacity:0.8,
-                weight:1,
+                weight:0.4,
                 color:'#fff'
             };
         },
@@ -146,7 +153,7 @@
     function drillToMap(e) {
         let layer = e.target;
         let layerBounds = layer.getBounds();
-        
+
         map.fitBounds(layerBounds);
         map.addControl(backButtonControl);
     }
@@ -167,6 +174,10 @@
 
     function moveTo(e) {
         let layer = e.target;
+        layer.setStyle({
+            radius:15
+        });
+
         map.flyTo(layer.getLatLng(), 10);
     }
 
@@ -183,18 +194,15 @@
 
     function resetMapToDefault(e) {
         // reset layer style
-        postConstituency.eachLayer(layer =>{
+        postCodePoint.eachLayer(layer =>{
             layer.setStyle({
-                fillColor:'#eaaf00',
-                fillOpacity:0.8,
-                opacity:0.8
+                radius:3
             })
         })
         // fit to layer extent
         map.fitBounds(postConstituency.getBounds());
 
         // remove the point data
-
         map.removeControl(backButtonControl);
     }
 
