@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="https://npmcdn.com/rbush@2.0.1/rbush.js"></script>
     <link rel="stylesheet" href="leaflet.css">
     <script src="leaflet.js"></script>
+    <script src="Leaflet.LayerGroup.Collision.js"></script>
     <style>
         body {
             margin: 0;
@@ -13,19 +15,19 @@
 
         /* Custom mapbox styling */
         .custom-icon {
-            height: 24px;
-            width: 24px;
+            height: 14px;
+            width: 14px;
             border: 2px solid;
             border-color: aquamarine;
             border-radius: 50%;
         }
 
         .inner-icon {
-            height: 16px;
-            width: 16px;
+            height: 10px;
+            width: 10px;
             background-color: aquamarine;
             border-radius: 50%;
-            margin:4px auto;
+            margin:2px auto;
         }
 
         .leaflet-container {
@@ -67,13 +69,15 @@
      var postCodePoint = L.geoJson(null, {
         onEachFeature:onEachPointFeature,
         pointToLayer:function(geoObject, latlng){
-            return L.marker(latlng, {
+            let marker = L.marker(latlng, {
                 icon:customIcom
             });
+            return marker;
         }
      });
 
      postCodePoint.addTo(map);
+     var collisionLayer = L.LayerGroup.collision({margin:15});
 
      var postConstituency = L.geoJson(null, {
         style:function(feature){
@@ -94,6 +98,19 @@
         .then(response => response.json())
         .then(data => {
             postalCodePoints = data;
+            postCodePoint.addData(data);
+
+            // data.features.forEach(datum => {
+            //     console.log(L.GeoJSON.coordsToLatLng(datum.geometry.coordinates));
+            //     let marker = L.marker(L.GeoJSON.coordsToLatLng(datum.geometry.coordinates),{
+            //         icon:customIcom
+            //     });
+
+            //     collisionLayer.addLayer(marker);
+            // });
+
+            // collisionLayer.addTo(map);
+
         });
     
     fetch('uk_constituency.geojson')
@@ -105,55 +122,32 @@
     // Add layer interactivity
     function onEachConstituency(feature, layer) {
         layer.on('click', drillToMap);
-        layer.on('mouseover', highlightLayer);
-        layer.on('mouseout', resetLayerStyle);
+        // layer.on('mouseover', highlightLayer);
+        // layer.on('mouseout', resetLayerStyle);
 
-        layer.bindTooltip(feature.properties.Name);
+        // layer.bindTooltip(feature.properties.Name);
     }
 
     function highlightLayer(e) {
         let layer = e.target;
 
         layer.setStyle({
-            color:'#00bb00'
+            fillColor:'#00bb00'
         }); 
     }
 
     function resetLayerStyle(e) {
         let layer = e.target;
         layer.setStyle({
-            color:'#eaaf00'
+            fillColor:'#eaaf00'
         }); 
     }
 
     function drillToMap(e) {
         let layer = e.target;
         let layerBounds = layer.getBounds();
+        
         map.fitBounds(layerBounds);
-
-        // load the data related to the constituency
-        console.log(layer);
-        let activeFeature = layer.feature;
-        let currentData =postalCodePoints.features.filter(code => {
-            if(code.properties["Postcode area"]== activeFeature.properties.Name) {
-                return code;
-            }
-        });
-
-        // restyling the layer
-        postConstituency.eachLayer(layer => {
-            if(layer.feature.properties.Name != activeFeature.properties.Name) {
-                layer.setStyle({
-                    fillOpacity:0,
-                    opacity:0
-                });
-            }
-        });
-
-        // update pointData source
-        postCodePoint.clearLayers();
-        postCodePoint.addData(currentData);
-
         map.addControl(backButtonControl);
     }
 
@@ -168,11 +162,12 @@
             layer.bindTooltip(feature.properties['Area covered']);
         }
         
+        map.addControl(backButtonControl);
     }
 
     function moveTo(e) {
-        // let layer = 
-        // map.flyTo()
+        let layer = e.target;
+        map.flyTo(layer.getLatLng(), 10);
     }
 
     // Back button
@@ -190,7 +185,7 @@
         // reset layer style
         postConstituency.eachLayer(layer =>{
             layer.setStyle({
-                color:'#eaaf00',
+                fillColor:'#eaaf00',
                 fillOpacity:0.8,
                 opacity:0.8
             })
@@ -199,7 +194,6 @@
         map.fitBounds(postConstituency.getBounds());
 
         // remove the point data
-        postCodePoint.clearLayers();
 
         map.removeControl(backButtonControl);
     }
