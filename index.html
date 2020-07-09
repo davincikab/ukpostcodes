@@ -55,7 +55,8 @@
      });
 
      map.zoomControl.remove()
-
+     var workingAreas = ["London", "GU", "BN", "TN", "RH", "ME", "DA", "RM", "CM", "CO", "CB", "IP", "SG", "AL", "LU", "MK", "HP", "OX", "GL", "SL", "RG"]
+     var colors = ["#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99"];
      var postalCodePoints;
      var postalCodeAreas;
 
@@ -78,22 +79,53 @@
      var postConstituency = L.geoJson(null, {
         style:function(feature){
             return {
-                fillColor:'#eaaf00',
+                fillColor:constituencyStyle(feature),
                 fillOpacity:0.8,
-                weight:1,
+                weight:0.4,
                 color:'#fff'
             };
         },
         onEachFeature:onEachConstituency
     });
 
+    function constituencyStyle(feature) {
+        if(workingAreas.indexOf(feature.properties.Name) != -1) {
+            console.log(feature.properties.Name);
+            // return "#333333";
+            return "#543005";
+        }
+
+        // return "#8da0cb";
+        return "#bcbcba";
+        // return "#b3cde3";
+        // return '#464457';
+    }
+
     postConstituency.addTo(map);
 
+    var ukCounties = L.geoJson(null, {
+        style:function(feature){
+            return {
+                fillColor:countyStyle(feature),
+                fillOpacity:0.8,
+                weight:0.4,
+                color:'#fff'
+            };
+        },
+        onEachFeature:onEachConstituency
+    });
+
+    function countyStyle(feature) {
+        Math.random()
+    }
+
+    ukCounties.addTo(map);
     //  load the data
-    fetch('postalcodepoints.geojson')
+    fetch('counties_uk.geojson')
         .then(response => response.json())
         .then(data => {
-            postalCodePoints = data;
+            // postalCodePoints = data;
+            ukCounties.addData(data);
         });
     
     fetch('uk_constituency.geojson')
@@ -115,14 +147,14 @@
         let layer = e.target;
 
         layer.setStyle({
-            color:'#00bb00'
+            fillColor:'#eaaf00'
         }); 
     }
 
     function resetLayerStyle(e) {
         let layer = e.target;
         layer.setStyle({
-            color:'#eaaf00'
+            fillColor:constituencyStyle(layer.feature)
         }); 
     }
 
@@ -134,11 +166,11 @@
         // load the data related to the constituency
         console.log(layer);
         let activeFeature = layer.feature;
-        let currentData =postalCodePoints.features.filter(code => {
-            if(code.properties["Postcode area"]== activeFeature.properties.Name) {
-                return code;
-            }
-        });
+        // let currentData =postalCodePoints.features.filter(code => {
+        //     if(code.properties["Postcode area"]== activeFeature.properties.Name) {
+        //         return code;
+        //     }
+        // });
 
         // restyling the layer
         postConstituency.eachLayer(layer => {
@@ -154,8 +186,8 @@
         });
 
         // update pointData source
-        postCodePoint.clearLayers();
-        postCodePoint.addData(currentData);
+        // postCodePoint.clearLayers();
+        // postCodePoint.addData(currentData);
 
         map.addControl(backButtonControl);
     }
@@ -193,7 +225,7 @@
         // reset layer style
         postConstituency.eachLayer(layer =>{
             layer.setStyle({
-                color:'#eaaf00',
+                fillColor:constituencyStyle(layer.feature),
                 fillOpacity:0.8,
                 opacity:0.8
             });
@@ -203,6 +235,7 @@
 
         // fit to layer extent
         map.fitBounds(postConstituency.getBounds());
+        map.setZoom(6);
 
         // remove the point data
         postCodePoint.clearLayers();

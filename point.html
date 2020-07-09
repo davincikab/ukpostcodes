@@ -7,7 +7,6 @@
     <script src="https://npmcdn.com/rbush@2.0.1/rbush.js"></script>
     <link rel="stylesheet" href="leaflet.css">
     <script src="leaflet.js"></script>
-    <script src="Leaflet.LayerGroup.Collision.js"></script>
     <style>
         body {
             margin: 0;
@@ -84,7 +83,6 @@
      });
 
      postCodePoint.addTo(map);
-     var collisionLayer = L.LayerGroup.collision({margin:15});
 
      var postConstituency = L.geoJson(null, {
         style:function(feature){
