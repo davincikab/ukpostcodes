@@ -57,7 +57,6 @@
      map.zoomControl.remove()
      var workingAreas = ["London", "GU", "BN", "TN", "RH", "ME", "DA", "RM", "CM", "CO", "CB", "IP", "SG", "AL", "LU", "MK", "HP", "OX", "GL", "SL", "RG"]
      var colors = ["#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99"];
-     var postalCodePoints;
      var postalCodeAreas;
 
      var customIcom = L.divIcon({
@@ -91,14 +90,10 @@
     function constituencyStyle(feature) {
         if(workingAreas.indexOf(feature.properties.Name) != -1) {
             console.log(feature.properties.Name);
-            // return "#333333";
             return "#543005";
         }
 
-        // return "#8da0cb";
         return "#bcbcba";
-        // return "#b3cde3";
-        // return '#464457';
     }
 
     postConstituency.addTo(map);
@@ -116,15 +111,14 @@
     });
 
     function countyStyle(feature) {
-        Math.random()
+        var isWorkArea = feature.properties.WorkingAre;
+        return isWorkArea == 'true' ? '#543005' : '#bcbcba';
     }
 
-    ukCounties.addTo(map);
     //  load the data
     fetch('counties_uk.geojson')
         .then(response => response.json())
         .then(data => {
-            // postalCodePoints = data;
             ukCounties.addData(data);
         });
     
@@ -134,13 +128,25 @@
             postConstituency.addData(data);
         });
     
+    
+    L.control.layers({
+        'Counties':ukCounties,
+        'Post Code Area':postConstituency
+    }, {}, {collapsed:false}).addTo(map);
+
     // Add layer interactivity
     function onEachConstituency(feature, layer) {
         layer.on('click', drillToMap);
         layer.on('mouseover', highlightLayer);
         layer.on('mouseout', resetLayerStyle);
 
-        layer.bindTooltip(feature.properties.Name +'<br> Click to drill down');
+        if(feature.properties.WorkingAre) {
+            layer.bindTooltip(feature.properties.NAME_2 +'<br> Click to drill down');
+        } else {
+            layer.bindTooltip(feature.properties.Name +'<br> Click to drill down');
+        }
+
+        
     }
 
     function highlightLayer(e) {
@@ -153,9 +159,18 @@
 
     function resetLayerStyle(e) {
         let layer = e.target;
-        layer.setStyle({
-            fillColor:constituencyStyle(layer.feature)
-        }); 
+
+        if(layer.feature.properties.WorkingAre) {
+            layer.setStyle({
+                fillColor:countyStyle(layer.feature)
+            }); 
+
+        } else{
+            layer.setStyle({
+                fillColor:constituencyStyle(layer.feature)
+            });
+        }
+         
     }
 
     function drillToMap(e) {
@@ -166,11 +181,6 @@
         // load the data related to the constituency
         console.log(layer);
         let activeFeature = layer.feature;
-        // let currentData =postalCodePoints.features.filter(code => {
-        //     if(code.properties["Postcode area"]== activeFeature.properties.Name) {
-        //         return code;
-        //     }
-        // });
 
         // restyling the layer
         postConstituency.eachLayer(layer => {
@@ -185,10 +195,22 @@
             layer.unbindTooltip();
         });
 
-        // update pointData source
-        // postCodePoint.clearLayers();
-        // postCodePoint.addData(currentData);
+        if( activeFeature.properties.NAME_2){
+            ukCounties.eachLayer(layer => {
+                if(layer.feature.properties.NAME_2 != activeFeature.properties.NAME_2) {
+                    layer.setStyle({
+                        fillOpacity:0,
+                        opacity:0
+                    });
 
+                    // remove tootip
+                layer.unbindTooltip();
+                }
+
+                
+            });
+        }
+        
         map.addControl(backButtonControl);
     }
 
@@ -231,6 +253,16 @@
             });
 
             layer.bindTooltip(layer.feature.properties.Name +'<br> Click to drill down');
+        });
+
+        ukCounties.eachLayer(layer =>{
+            layer.setStyle({
+                fillColor:countyStyle(layer.feature),
+                fillOpacity:0.8,
+                opacity:0.8
+            });
+
+            layer.bindTooltip(layer.feature.properties.NAME_2 +'<br> Click to drill down');
         });
 
         // fit to layer extent
