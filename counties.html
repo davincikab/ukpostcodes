@@ -59,10 +59,10 @@
      var colors = ["#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99"];
      var postalCodeAreas;
 
-     var postConstituency = L.geoJson(null, {
+    var ukCounties = L.geoJson(null, {
         style:function(feature){
             return {
-                fillColor:constituencyStyle(feature),
+                fillColor:countyStyle(feature),
                 fillOpacity:0.8,
                 weight:0.4,
                 color:'#fff'
@@ -71,23 +71,20 @@
         onEachFeature:onEachConstituency
     });
 
-    function constituencyStyle(feature) {
-        if(workingAreas.indexOf(feature.properties.Name) != -1) {
-            console.log(feature.properties.Name);
-            return "#e41a1c";
-        }
-
-        return "#F8BDDD";
+    ukCounties.addTo(map);
+    function countyStyle(feature) {
+        var isWorkArea = feature.properties.WorkingAre;
+        // return isWorkArea == 'true' ? '#543005' : '#bcbcba';
+        return isWorkArea == 'true' ? "#ff7f00": "#4daf4a";
     }
 
-    postConstituency.addTo(map);
-    
-    fetch('uk_constituency.geojson')
+    //  load the data
+    fetch('counties_uk.geojson')
         .then(response => response.json())
         .then(data => {
-            postConstituency.addData(data);
+            ukCounties.addData(data);
         });
-    
+
 
     // Add layer interactivity
     function onEachConstituency(feature, layer) {
@@ -95,7 +92,7 @@
         layer.on('mouseover', highlightLayer);
         layer.on('mouseout', resetLayerStyle);
 
-        layer.bindTooltip(feature.properties.Name +'<br> Click to drill down');
+        layer.bindTooltip(feature.properties.NAME_2 +'<br> Click to drill down');       
     }
 
     function highlightLayer(e) {
@@ -109,8 +106,10 @@
     function resetLayerStyle(e) {
         let layer = e.target;
         layer.setStyle({
-            fillColor:constituencyStyle(layer.feature)
-        });
+            fillColor:countyStyle(layer.feature)
+        }); 
+
+        layer.bindTooltip(layer.feature.properties.NAME_2 +'<br> Click to drill down'); 
          
     }
 
@@ -120,18 +119,18 @@
         map.fitBounds(layerBounds);
 
         // load the data related to the constituency
-        console.log(layer);
         let activeFeature = layer.feature;
-
-        // restyling the layer
-        postConstituency.eachLayer(layer => {
-            if(layer.feature.properties.Name != activeFeature.properties.Name) {
-                
+        ukCounties.eachLayer(layer => {
+            if(layer.feature.properties.NAME_2 != activeFeature.properties.NAME_2) {
+                    // remove tootip
+                // layer.unbindTooltip();
+            } else {
+                layer.bindTooltip("Click to redirect <a>Read more</a>");
+                layer.setStyle({'fillColor':'grey'});
             }
 
-            // remove tootip
-            // layer.unbindTooltip();
         });
+        
         
         map.addControl(backButtonControl);
     }
@@ -141,7 +140,7 @@
     backButtonControl.onAdd = function (map) {
         let div = L.DomUtil.create('button', 'btn');
         div.innerHTML = 'Back';
-        div.style.cursor = 'pointer';
+        div.style.curspr = 'pointer';
 
         div.addEventListener('click', resetMapToDefault);
         return div;
@@ -149,18 +148,19 @@
 
     function resetMapToDefault(e) {
         // reset layer style
-        postConstituency.eachLayer(layer =>{
+
+        ukCounties.eachLayer(layer =>{
             layer.setStyle({
-                fillColor:constituencyStyle(layer.feature),
+                fillColor:countyStyle(layer.feature),
                 fillOpacity:0.8,
                 opacity:0.8
             });
 
-            layer.bindTooltip(layer.feature.properties.Name +'<br> Click to drill down');
+            layer.bindTooltip(layer.feature.properties.NAME_2 +'<br> Click to drill down');
         });
 
         // fit to layer extent
-        map.fitBounds(postConstituency.getBounds());
+        map.fitBounds(ukCounties.getBounds());
         map.setZoom(6);
 
         map.removeControl(backButtonControl);
