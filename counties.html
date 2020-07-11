@@ -54,7 +54,13 @@
          zoomDelta:0.5
      });
 
-     map.zoomControl.remove()
+     map.zoomControl.remove();
+     var url = "http://captain-fantastic.co.uk/locations/essex";
+     var inactiveUrl = "https://captain-fantastic.co.uk/franchise/";
+
+     var activeFeature = null;
+     var previousFeature = null;
+
      var workingAreas = ["London", "GU", "BN", "TN", "RH", "ME", "DA", "RM", "CM", "CO", "CB", "IP", "SG", "AL", "LU", "MK", "HP", "OX", "GL", "SL", "RG"]
      var colors = ["#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99"];
      var postalCodeAreas;
@@ -82,7 +88,20 @@
     fetch('counties_uk.geojson')
         .then(response => response.json())
         .then(data => {
+            data.features = data.features.map(feature => {
+                if(feature.properties.WorkingAre != "true") {
+                    feature.properties.url = inactiveUrl;
+                    return feature;
+                }
+
+                feature.properties.url = url;
+
+                return feature
+            });
+
+            
             ukCounties.addData(data);
+
         });
 
 
@@ -119,7 +138,17 @@
         map.fitBounds(layerBounds);
 
         // load the data related to the constituency
-        let activeFeature = layer.feature;
+        activeFeature = layer.feature;
+        
+        let tpContent = layer.getTooltip();
+        
+        if(tpContent._content.includes('redirect')) {
+
+            console.log("Redirecting");
+            window.location.assign(layer.feature.properties.url);
+        }
+
+
         ukCounties.eachLayer(layer => {
             if(layer.feature.properties.NAME_2 != activeFeature.properties.NAME_2) {
                     // remove tootip
